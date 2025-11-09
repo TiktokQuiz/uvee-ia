@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>uvve.ia</title>
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/766/766210.png" type="image/png">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #000;
+  --fg: #b47fd8;
+  --panel-bg: #0a0a0a;
+  --border: #1f1f1f;
+  --radius: 14px;
+}
+* { box-sizing:border-box; margin:0; padding:0; font-family:"Inter",sans-serif; }
+body { background:var(--bg); color:var(--fg); height:100vh; display:flex; }
+.container { display:flex; width:100%; height:100vh; background:var(--bg); }
+.sidebar { width:260px; background:var(--panel-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:20px; color:var(--fg); }
+.sidebar h2 { font-weight:700; font-size:1.5em; margin-bottom:20px; }
+.sidebar button { background:transparent; border:1px solid var(--fg); color:var(--fg); border-radius:10px; padding:10px; margin-bottom:10px; cursor:pointer; transition:0.2s; }
+.sidebar button:hover { background:var(--fg); color:var(--bg); }
+.history { margin-top:10px; border-top:1px solid var(--border); padding-top:10px; overflow-y:auto; flex:1; background: var(--panel-bg); color: var(--fg); display:flex; flex-direction: column; }
+.history::-webkit-scrollbar { width: 8px; }
+.history::-webkit-scrollbar-thumb { background: var(--fg); border-radius:4px; }
+.history::-webkit-scrollbar-track { background: var(--panel-bg); }
+.history div { display:flex; justify-content:space-between; align-items:center; padding:8px; border-radius:8px; cursor:pointer; transition:0.2s; background: var(--panel-bg); color: var(--fg); position: relative; }
+.history div:hover { background:#1b1b1b; }
+.more-btn { display:none; cursor:pointer; margin-left:5px; }
+.history div:hover .more-btn { display:inline; }
+.delete-btn { display:none; background:none; border:none; color:var(--fg); cursor:pointer; margin-left:5px; }
+.delete-btn:hover { opacity:0.8; }
+.more-menu { position:absolute; top:0; right:0; display:flex; gap:4px; }
+.chat-area { flex:1; display:flex; flex-direction:column; }
+header { padding:18px 24px; border-bottom:1px solid var(--border); font-size:1.3em; font-weight:700; color:var(--fg); }
+.chat-box { flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; background:#111; }
+.message { padding:12px 16px; border-radius:var(--radius); max-width:75%; font-size:15px; animation:fadeIn 0.3s ease; border:1px solid var(--border); word-break:break-word; position:relative; }
+.message.user { background:var(--fg); color:var(--bg); margin-left:auto; }
+.message.bot { background:var(--panel-bg); color:var(--fg); }
+.message pre {
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  width: max-content;
+  max-width: 350px;
+  max-height: 200px;
+  overflow: auto;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+.copy-btn {
+  position:absolute;
+  top:8px;
+  right:8px;
+  background:none;
+  border:none;
+  color:var(--fg);
+  cursor:pointer;
+  font-size:16px;
+}
+.copy-btn:hover { opacity:0.8; }
+.input-area { display:flex; border-top:1px solid var(--border); background:var(--panel-bg); padding:12px; gap:10px; }
+.input-area input { flex:1; border:1px solid var(--border); border-radius:var(--radius); padding:12px; font-size:15px; background:#0a0a0a; color:var(--fg); }
+.input-area button { background:var(--fg); color:var(--bg); border:none; border-radius:var(--radius); padding:0 22px; font-size:15px; cursor:pointer; transition:0.2s; }
+.input-area button:hover { opacity:0.8; }
+.typing { font-style: italic; color:#d3b3ff; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
+@media (max-width:768px){ .sidebar{display:none;} }
+</style>
+</head>
+<body>
+<div class="container">
+  <aside class="sidebar">
+    <h2>uvve<span style="font-weight:400;">.ia</span></h2>
+    <button id="newChatBtn">+ Novo Chat</button>
+    <div class="history" id="history"></div>
+  </aside>
+
+  <div class="chat-area">
+    <header>Chat uvve.ia</header>
+    <div class="chat-box" id="chatBox">
+      <div class="message bot">🍇 Olá! Eu sou a <strong>uvee</strong>. Vamos conversar?</div>
+    </div>
+    <div class="input-area">
+      <input id="userInput" type="text" placeholder="Digite sua mensagem...">
+      <button id="sendBtn">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-javascript.min.js"></script>
+
+<script>
+const input = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const chatBox = document.getElementById("chatBox");
+const newChatBtn = document.getElementById("newChatBtn");
+const historyBox = document.getElementById("history");
+
+let chatHistory = JSON.parse(localStorage.getItem("uvveHistory") || "[]");
+let currentChat = [];
+
+function renderHistory() {
+  historyBox.innerHTML = "";
+  chatHistory.forEach((chat,index)=>{
+    const div = document.createElement("div");
+    div.style.flexDirection = "row";
+
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = chat.title;
+    titleSpan.style.flex = "1";
+    titleSpan.onclick = ()=> loadChat(index);
+
+    const moreMenu = document.createElement("div");
+    moreMenu.classList.add("more-menu");
+
+    const moreBtn = document.createElement("span");
+    moreBtn.classList.add("more-btn");
+    moreBtn.textContent = "⋮";
+    moreBtn.onclick = (e)=> {
+      e.stopPropagation();
+      delBtn.style.display = delBtn.style.display==="inline"?"none":"inline";
+    };
+
+    const delBtn = document.createElement("button");
+    delBtn.classList.add("delete-btn");
+    delBtn.textContent = "🗑️";
+    delBtn.onclick = (e)=>{
+      e.stopPropagation();
+      chatHistory.splice(index,1);
+      localStorage.setItem("uvveHistory", JSON.stringify(chatHistory));
+      renderHistory();
+    };
+
+    moreMenu.appendChild(moreBtn);
+    moreMenu.appendChild(delBtn);
+
+    div.appendChild(titleSpan);
+    div.appendChild(moreMenu);
+    historyBox.appendChild(div);
+  });
+}
+renderHistory();
+
+function saveCurrentChat() {
+  if(currentChat.length>0){
+    const title=currentChat[0].text.slice(0,20)+"...";
+    chatHistory.push({title,messages:currentChat});
+    localStorage.setItem("uvveHistory", JSON.stringify(chatHistory));
+  }
+}
+
+function loadChat(index){
+  chatBox.innerHTML="";
+  const chat=chatHistory[index];
+  chat.messages.forEach(m=>addMessage(m.text,m.sender,false));
+  currentChat=[...chat.messages];
+}
+
+function addMessage(text,sender,save=true){
+  const msg=document.createElement("div");
+  msg.classList.add("message",sender);
+
+  if(/```[\s\S]*?```/.test(text)){
+    const codeBlock=text.replace(/```/g,"");
+    const pre=document.createElement("pre");
+    const code=document.createElement("code");
+    const langMatch=text.match(/```(\w+)/);
+    code.className=langMatch?`language-${langMatch[1]}`:"language-javascript";
+    code.textContent=codeBlock.trim();
+    pre.appendChild(code);
+    msg.appendChild(pre);
+
+    const btn=document.createElement("button");
+    btn.classList.add("copy-btn");
+    btn.innerHTML="📋";
+    btn.onclick=()=>{navigator.clipboard.writeText(code.textContent); btn.innerText="✅"; setTimeout(()=>btn.innerText="📋",1000);};
+    msg.appendChild(btn);
+
+    Prism.highlightElement(code);
+
+  } else if(/<img\s+src=/.test(text)){
+    msg.innerHTML=text;
+  } else {
+    text=text.replace(/\*\*/g,"").replace(/`/g,"");
+    if(sender==="bot"){
+      if(/errado|não|erro/i.test(text)) text="❌ "+text;
+      else if(/certo|sim|correto/i.test(text)) text="✅ "+text;
+      else if(/dica|sugestão|lembrete/i.test(text)) text="💡 "+text;
+      else if(/atenção|cuidado|aviso/i.test(text)) text="⚠️ "+text;
+    }
+    msg.textContent=text;
+  }
+
+  chatBox.appendChild(msg);
+  chatBox.scrollTop=chatBox.scrollHeight;
+  if(save) currentChat.push({sender,text});
+  return msg;
+}
+
+function typingAnimation(){
+  const msg=document.createElement("div");
+  msg.classList.add("message","bot","typing");
+  let dots=0;
+  const interval=setInterval(()=>{
+    dots=(dots+1)%4;
+    msg.textContent="uvee está pensando"+ ".".repeat(dots);
+  },500);
+  chatBox.appendChild(msg);
+  chatBox.scrollTop=chatBox.scrollHeight;
+  return {msg,interval};
+}
+
+async function sendMessage(){
+  const text=input.value.trim();
+  if(!text) return;
+  addMessage(text,"user");
+  input.value="";
+
+  const typing=typingAnimation();
+
+  try{
+    const res=await fetch("http://127.0.0.1:5000/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text})});
+    const data=await res.json();
+
+    clearInterval(typing.interval);
+    chatBox.removeChild(typing.msg);
+
+    addMessage(data.response,"bot");
+
+  }catch(error){
+    clearInterval(typing.interval);
+    chatBox.removeChild(typing.msg);
+    addMessage("⚠️ Erro: não foi possível conectar ao servidor.","bot");
+  }
+}
+
+sendBtn.onclick=sendMessage;
+input.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
+
+newChatBtn.onclick=()=>{
+  saveCurrentChat();
+  currentChat=[];
+  chatBox.innerHTML='<div class="message bot">🍇 Novo chat iniciado com uvee!</div>';
+  renderHistory();
+};
+
+window.addEventListener("beforeunload",saveCurrentChat);
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>uvve.ia</title>
+
+<!-- 🍇 FAVICON DE UVA -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='purple'/><text x='20' y='44' font-size='28' fill='white'>🍇</text></svg>">
+
+<style>
+:root {
+  --bg: #000;
+  --fg: #b47fd8;
+  --panel-bg: #0a0a0a;
+  --msg-bg: #111;
+  --border: #1f1f1f;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: "Inter", Arial, sans-serif; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* === PAINEL LATERAL === */
+.sidebar {
+  width: 260px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  transition: 0.3s;
+  position: relative;
+}
+
+.sidebar h2 {
+  color: var(--fg);
+  font-weight: 700;
+  font-size: 1.4em;
+  margin-bottom: 20px;
+}
+
+.sidebar button {
+  background: transparent;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar button:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.sidebar .history {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 15px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sidebar .history div {
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar .history div:hover {
+  background: #1b1b1b;
+}
+
+/* BOTÃO DE MENU (MOBILE) */
+.menu-btn {
+  display: none;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: transparent;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* === ÁREA DE CHAT === */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--fg);
+  position: relative;
+}
+
+/* MENSAGENS */
+.chat-box {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--msg-bg);
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  max-width: 75%;
+  line-height: 1.5;
+  font-size: 15px;
+  animation: fadeIn 0.3s ease;
+  border: 1px solid var(--border);
+}
+
+.message.user {
+  background: var(--fg);
+  color: var(--bg);
+  margin-left: auto;
+}
+
+.message.bot {
+  background: var(--panel-bg);
+  color: var(--fg);
+}
+
+/* RODAPÉ */
+.input-area {
+  display: flex;
+  border-top: 1px solid var(--border);
+  background: var(--panel-bg);
+  padding: 12px;
+  gap: 10px;
+}
+
+.input-area input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 15px;
+  outline: none;
+  background: #0a0a0a;
+  color: var(--fg);
+}
+
+.input-area input:focus {
+  border-color: var(--fg);
+}
+
+.input-area button {
+  background: var(--fg);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0 22px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.input-area button:hover {
+  opacity: 0.85;
+}
+
+/* ANIMAÇÃO */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* SCROLL */
+.chat-box::-webkit-scrollbar,
+.sidebar .history::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-box::-webkit-scrollbar-thumb,
+.sidebar .history::-webkit-scrollbar-thumb {
+  background-color: #333;
+  border-radius: 3px;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    left: -260px;
+    top: 0;
+    height: 100%;
+    z-index: 100;
+  }
+
+  .sidebar.open { left: 0; }
+
+  .menu-btn { display: block; }
+
+  header { padding-left: 60px; }
+}
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <aside class="sidebar" id="sidebar">
+      <h2>uvve<span style="font-weight:400;">.ia</span></h2>
+      <button id="newChatBtn">+ Novo Chat</button>
+      <div class="history" id="history"></div>
+    </aside>
+
+    <div class="chat-area">
+      <header>
+        <button class="menu-btn" id="menuBtn">☰</button>
+        Chat uvve.ia
+      </header>
+
+      <div class="chat-box" id="chatBox">
+        <div class="message bot">🍇 Olá! Eu sou a <strong>uvve.ia</strong>. Vamos conversar?</div>
+      </div>
+
+      <div class="input-area">
+        <input type="text" id="userInput" placeholder="Digite sua mensagem..." autocomplete="off">
+        <button id="sendBtn">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const input = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const chatBox = document.getElementById("chatBox");
+const newChatBtn = document.getElementById("newChatBtn");
+const sidebar = document.getElementById("sidebar");
+const menuBtn = document.getElementById("menuBtn");
+const historyBox = document.getElementById("history");
+
+let chatHistory = JSON.parse(localStorage.getItem("uvve_history")) || [];
+let currentChat = JSON.parse(localStorage.getItem("uvve_currentChat")) || [];
+
+// Atualiza histórico visual
+function renderHistory() {
+  historyBox.innerHTML = "";
+  if (chatHistory.length === 0) {
+    historyBox.innerHTML = "<p style='opacity:0.6; font-size:14px;'>Sem histórico ainda 🍇</p>";
+    return;
+  }
+  chatHistory.forEach((c, i) => {
+    const div = document.createElement("div");
+    div.textContent = c.title;
+    div.onclick = () => loadChat(i);
+    historyBox.appendChild(div);
+  });
+}
+
+// Adiciona mensagem no chat
+function addMessage(text, sender) {
+  const msg = document.createElement("div");
+  msg.classList.add("message", sender);
+  msg.innerHTML = text;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  currentChat.push({ sender, text });
+  saveCurrentChat();
+}
+
+// Simula resposta
+function uvveReply(userText) {
+  const lower = userText.toLowerCase();
+  let resposta = "🍇 Interessante, me conte mais...";
+  if (lower.includes("oi") || lower.includes("olá")) resposta = "Oi, tudo bem? 💜";
+  else if (lower.includes("quem é você")) resposta = "Sou a uvve.ia — uma inteligência roxa em um mundo preto 🌌.";
+  else if (lower.includes("ajuda")) resposta = "Você pode conversar comigo sobre qualquer coisa 😄";
+  else if (lower.includes("tchau")) resposta = "Até logo 💜";
+  setTimeout(() => addMessage(resposta, "bot"), 600);
+}
+
+// Enviar mensagem
+function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage(text, "user");
+  input.value = "";
+  uvveReply(text);
+}
+
+// Novo chat
+newChatBtn.onclick = () => {
+  saveChat();
+  currentChat = [];
+  saveCurrentChat();
+  chatBox.innerHTML = '<div class="message bot">🍇 Novo chat iniciado com uvve.ia!</div>';
+};
+
+// Salvar chat no histórico
+function saveChat() {
+  if (currentChat.length === 0) return;
+  const title = currentChat[0]?.text?.slice(0, 25) || "Chat sem título";
+  chatHistory.unshift({ title, messages: currentChat });
+  localStorage.setItem("uvve_history", JSON.stringify(chatHistory));
+  renderHistory();
+}
+
+// Salva chat atual automaticamente
+function saveCurrentChat() {
+  localStorage.setItem("uvve_currentChat", JSON.stringify(currentChat));
+}
+
+// Carregar chat anterior
+function loadChat(index) {
+  const chat = chatHistory[index];
+  chatBox.innerHTML = "";
+  chat.messages.forEach(m => addMessage(m.text, m.sender));
+  currentChat = chat.messages;
+  saveCurrentChat();
+  sidebar.classList.remove("open");
+}
+
+// Restaurar chat atual
+function restoreCurrentChat() {
+  if (currentChat.length > 0) {
+    chatBox.innerHTML = "";
+    currentChat.forEach(m => addMessage(m.text, m.sender));
+  }
+}
+
+// Alternar menu (mobile)
+menuBtn.onclick = () => sidebar.classList.toggle("open");
+
+// Eventos
+sendBtn.onclick = sendMessage;
+input.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+// Inicializa histórico e chat
+renderHistory();
+restoreCurrentChat();
+</script>
+</body>
+</html>
